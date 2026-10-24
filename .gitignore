@@ -1,0 +1,21 @@
+# Python environment and generated files
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.env
+
+# WordPress local configuration
+wp-config.php
+wp-content/debug.log
+
+# Generated visual testing artifacts
+screenshots/
+baselines/
+diffs/
+results/
+
+# Editor and operating system files
+.vscode/
+.DS_Store
+Thumbs.db
