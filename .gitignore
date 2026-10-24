@@ -4,13 +4,15 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .env
+.env.*
+!.env.example
 
 # WordPress local configuration
 wp-config.php
 wp-content/debug.log
 
 # Generated visual testing artifacts
-screenshots/
+checker-engine/screenshots/
 baselines/
 diffs/
 results/
