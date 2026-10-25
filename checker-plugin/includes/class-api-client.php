@@ -23,6 +23,40 @@ class WP_DesignChecker_API_Client
     private const API_URL = 'http://127.0.0.1:8000';
 
     /**
+     * Convert a WordPress HTTP connection failure into a
+     * user-friendly error without exposing technical details.
+     *
+     * The original error is recorded in the PHP error log
+     * when WordPress debugging and debug logging are enabled.
+     *
+     * @param WP_Error $error Original HTTP request error.
+     * @return WP_Error Safe error for the dashboard.
+     */
+    private static function handle_connection_error($error)
+    {
+        // Record technical details for development troubleshooting.
+        // Never log the API key or request authentication headers.
+        if (
+            defined('WP_DEBUG') &&
+            WP_DEBUG &&
+            defined('WP_DEBUG_LOG') &&
+            WP_DEBUG_LOG
+        ) {
+            error_log(
+                '[WP DesignChecker] API connection failure: ' .
+                    $error->get_error_message()
+            );
+        }
+
+        // Return a clear message suitable for WordPress users.
+        return new WP_Error(
+            'scanning_service_unavailable',
+            'WP DesignChecker cannot connect to the scanning service. ' .
+                'Please check that the service is running and try again.'
+        );
+    }
+
+    /**
      * Send an authenticated JSON request to the Python API.
      *
      * @param string $method HTTP request method.
@@ -54,7 +88,7 @@ class WP_DesignChecker_API_Client
         );
 
         if (is_wp_error($response)) {
-            return $response;
+            return self::handle_connection_error($response);
         }
 
         $status = wp_remote_retrieve_response_code($response);
@@ -201,7 +235,7 @@ class WP_DesignChecker_API_Client
         );
 
         if (is_wp_error($response)) {
-            return $response;
+            return self::handle_connection_error($response);
         }
 
         // Reject unsuccessful screenshot requests.
@@ -340,11 +374,11 @@ class WP_DesignChecker_API_Client
         // Retrieve the image belonging to the requested scan.
         return self::request_image(
             '/api/scans/' .
-            $scan_id .
-            '/screenshots/' .
-            $mode .
-            '/' .
-            $viewport
+                $scan_id .
+                '/screenshots/' .
+                $mode .
+                '/' .
+                $viewport
         );
     }
 }
