@@ -780,8 +780,24 @@ $scan_active = in_array(
             </div>
 
             <span class="dc-history-count">
-                <?php echo esc_html(count($scan_history)); ?>
-                Records
+                <?php if ($history_error !== '') : ?>
+
+                    <?php
+                    // The scanning service could not return history.
+                    // Do not report zero records when the count is unknown.
+                    echo esc_html('Unavailable');
+                    ?>
+
+                <?php else : ?>
+
+                    <?php
+                    // Only display the record count after a successful request.
+                    echo esc_html(
+                        count($scan_history) . ' Records'
+                    );
+                    ?>
+
+                <?php endif; ?>
             </span>
 
         </div>
@@ -1128,9 +1144,34 @@ $scan_active = in_array(
             </div>
 
             <?php if ($selected_scan === null) : ?>
+
                 <p class="dc-error-message" role="alert">
-                    This scan was not found in the loaded history.
+
+                    <?php if ($history_error !== '') : ?>
+
+                        <?php
+                        // History could not be loaded, so we cannot determine
+                        // whether the selected scan exists.
+                        echo esc_html(
+                            'Historical scan details are temporarily unavailable. ' .
+                                'Please check the scanning service and try again.'
+                        );
+                        ?>
+
+                    <?php else : ?>
+
+                        <?php
+                        // History loaded successfully, but the selected scan
+                        // was not found among the records returned.
+                        echo esc_html(
+                            'This scan was not found in the loaded history.'
+                        );
+                        ?>
+
+                    <?php endif; ?>
+
                 </p>
+
             <?php else : ?>
                 <p>
                     <strong>Scan ID:</strong>
