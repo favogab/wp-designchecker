@@ -1,21 +1,46 @@
+"""
+WP DesignChecker — SQLite Database Layer
+
+Manages persistent scan records, including scan results,
+execution status, errors, and historical scan retrieval.
+
+SQLite allows scan history to survive Python service restarts.
+"""
 
 import json
 import sqlite3
 from pathlib import Path
 
+
+# Store the SQLite database inside the checker-engine directory.
 DATABASE_PATH = Path(__file__).resolve().parent / "designchecker.db"
 
 
 def get_connection():
+    """
+    Create and configure a SQLite database connection.
+
+    Returns:
+        sqlite3.Connection: Connection configured to return
+        rows accessible by column names.
+    """
     connection = sqlite3.connect(
         DATABASE_PATH,
         timeout=30,
     )
+
     connection.row_factory = sqlite3.Row
+
     return connection
 
 
 def initialize_database():
+    """
+    Create the scans table if it does not already exist.
+
+    Stores scan identifiers, execution states, visual results,
+    errors, and timestamps.
+    """
     with get_connection() as connection:
         connection.execute("""
             CREATE TABLE IF NOT EXISTS scans (
@@ -30,6 +55,15 @@ def initialize_database():
 
 
 def save_scan(job):
+    """
+    Insert a new scan or update an existing scan record.
+
+    Args:
+        job (dict): Scan information containing its identifier,
+            state, result, error, and timestamps.
+
+    The result is serialized to JSON before storage.
+    """
     result = job.get("result")
 
     with get_connection() as connection:
@@ -59,6 +93,18 @@ def save_scan(job):
 
 
 def deserialize_scan(row):
+    """
+    Convert a SQLite scan record into a Python dictionary.
+
+    JSON-encoded results are converted back into their
+    original Python data types.
+
+    Args:
+        row (sqlite3.Row): Database record.
+
+    Returns:
+        dict: Deserialized scan information.
+    """
     job = dict(row)
 
     if job["result"] is not None:
@@ -68,6 +114,15 @@ def deserialize_scan(row):
 
 
 def get_saved_scan(scan_id):
+    """
+    Retrieve a previously saved scan using its unique identifier.
+
+    Args:
+        scan_id (str): Unique scan identifier.
+
+    Returns:
+        dict | None: Scan information or None if not found.
+    """
     with get_connection() as connection:
         row = connection.execute(
             "SELECT * FROM scans WHERE scan_id = ?",
@@ -78,6 +133,15 @@ def get_saved_scan(scan_id):
 
 
 def get_scan_history(limit=20):
+    """
+    Retrieve the most recent scan records.
+
+    Args:
+        limit (int): Maximum number of records to retrieve.
+
+    Returns:
+        list[dict]: Scan records ordered from newest to oldest.
+    """
     with get_connection() as connection:
         rows = connection.execute("""
             SELECT *
@@ -90,6 +154,12 @@ def get_scan_history(limit=20):
 
 
 def recover_interrupted_scans():
+    """
+    Mark unfinished scans as failed after a service restart.
+
+    Prevents scans left in pending or running states from
+    appearing permanently active after an unexpected shutdown.
+    """
     with get_connection() as connection:
         connection.execute("""
             UPDATE scans
