@@ -123,4 +123,26 @@ function wp_designchecker_enqueue_assets($hook)
         array(),
         '0.1.0'
     );
+
+    wp_enqueue_script(
+        'wp-designchecker-dashboard',
+        plugin_dir_url(__FILE__) . 'assets/js/dashboard.js',
+        array(),
+        '0.1.0',
+        true
+    );
+
+    wp_add_inline_script(
+        'wp-designchecker-dashboard',
+        'window.wpDesignChecker = ' . wp_json_encode(array(
+            'imageEndpoint' => add_query_arg(
+                array(
+                    'action' => 'wp_designchecker_image',
+                    'nonce' => wp_create_nonce('wp_designchecker_image'),
+                ),
+                admin_url('admin-ajax.php')
+            ),
+        )) . ';',
+        'before'
+    );
 }
