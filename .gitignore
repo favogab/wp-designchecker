@@ -22,3 +22,9 @@ results/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# WP DesignChecker local database
+checker-engine/*.db
+checker-engine/*.db-journal
+checker-engine/*.db-wal
+checker-engine/*.db-shm

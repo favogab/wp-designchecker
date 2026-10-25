@@ -1,4 +1,3 @@
-
 <?php
 
 if (!defined('ABSPATH') || !current_user_can('manage_options')) {
@@ -74,8 +73,8 @@ $state_class = in_array($state, array('completed'), true)
 
 <?php if (in_array($state, array('pending', 'running'), true)) : ?>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            window.setTimeout(function () {
+        document.addEventListener('DOMContentLoaded', function() {
+            window.setTimeout(function() {
                 window.location.reload();
             }, 5000);
         });
@@ -356,6 +355,65 @@ $state_class = in_array($state, array('completed'), true)
             overflow-wrap: anywhere;
         }
 
+        .dc-review-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .dc-review-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 180px;
+        }
+
+        .dc-review-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .dc-review-group select {
+            width: 100%;
+            min-height: 42px;
+            border: 1px solid #dbe2ea;
+            border-radius: 8px;
+            background: #fff;
+            color: #172033;
+            padding: 8px 12px;
+        }
+
+        .dc-preview-frame {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            min-height: 220px;
+            padding: 20px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            overflow: auto;
+        }
+
+        .dc-preview-frame img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 8px 25px rgba(15, 23, 42, .08);
+        }
+
+        .dc-preview-frame img[hidden] {
+            display: none;
+        }
+
+        #dc-review-error {
+            color: #b91c1c;
+            padding: 20px;
+        }
+
         /* Detailed viewport comparison */
 
         .dc-viewport-grid {
@@ -483,26 +541,22 @@ $state_class = in_array($state, array('completed'), true)
 
             <form
                 method="post"
-                action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
-            >
+                action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
                 <input
                     type="hidden"
                     name="action"
-                    value="wp_designchecker_scan"
-                >
+                    value="wp_designchecker_scan">
 
                 <?php wp_nonce_field('wp_designchecker_scan'); ?>
 
                 <button
                     type="submit"
                     class="dc-primary-button"
-                    <?php disabled(in_array($state, array('pending', 'running'), true)); ?>
-                >
+                    <?php disabled(in_array($state, array('pending', 'running'), true)); ?>>
                     <span
                         class="dashicons dashicons-visibility"
                         style="margin-right: 8px;"
-                        aria-hidden="true"
-                    ></span>
+                        aria-hidden="true"></span>
                     Run Check
                 </button>
             </form>
@@ -518,8 +572,7 @@ $state_class = in_array($state, array('completed'), true)
             <?php if ($scan_id) : ?>
                 <a
                     class="dc-secondary-button"
-                    href="<?php echo esc_url(admin_url('admin.php?page=wp-designchecker')); ?>"
-                >
+                    href="<?php echo esc_url(admin_url('admin.php?page=wp-designchecker')); ?>">
                     Refresh Status
                 </a>
             <?php endif; ?>
@@ -553,14 +606,14 @@ $state_class = in_array($state, array('completed'), true)
                     <span class="dc-metric-label">Visual Result</span>
 
                     <div class="dc-metric-value <?php
-                        echo esc_attr(
-                            $visual_result === 'FAIL'
-                                ? 'dc-fail-text'
-                                : ($visual_result === 'PASS'
-                                    ? 'dc-pass-text'
-                                    : '')
-                        );
-                    ?>">
+                                                echo esc_attr(
+                                                    $visual_result === 'FAIL'
+                                                        ? 'dc-fail-text'
+                                                        : ($visual_result === 'PASS'
+                                                            ? 'dc-pass-text'
+                                                            : '')
+                                                );
+                                                ?>">
                         <?php echo esc_html($visual_result ?? 'Pending'); ?>
                     </div>
                 </div>
@@ -614,22 +667,22 @@ $state_class = in_array($state, array('completed'), true)
                             </h3>
 
                             <span class="dc-status <?php
-                                echo esc_attr(
-                                    $status === 'PASS'
-                                        ? 'dc-success'
-                                        : 'dc-error'
-                                );
-                            ?>">
+                                                    echo esc_attr(
+                                                        $status === 'PASS'
+                                                            ? 'dc-success'
+                                                            : 'dc-error'
+                                                    );
+                                                    ?>">
                                 <?php echo esc_html($status); ?>
                             </span>
 
                             <div class="dc-viewport-percent <?php
-                                echo esc_attr(
-                                    $status === 'PASS'
-                                        ? 'dc-pass-text'
-                                        : 'dc-fail-text'
-                                );
-                            ?>">
+                                                            echo esc_attr(
+                                                                $status === 'PASS'
+                                                                    ? 'dc-pass-text'
+                                                                    : 'dc-fail-text'
+                                                            );
+                                                            ?>">
                                 <?php
                                 echo $difference === null
                                     ? 'N/A'
@@ -643,33 +696,31 @@ $state_class = in_array($state, array('completed'), true)
                                 class="dc-progress-track"
                                 role="img"
                                 aria-label="<?php
-                                    echo esc_attr(
-                                        $device . ' visual difference: ' .
-                                        (
-                                            $difference === null
-                                                ? 'unavailable'
-                                                : number_format($difference, 2) . '%'
-                                        )
-                                    );
-                                ?>"
-                            >
+                                            echo esc_attr(
+                                                $device . ' visual difference: ' .
+                                                    (
+                                                        $difference === null
+                                                        ? 'unavailable'
+                                                        : number_format($difference, 2) . '%'
+                                                    )
+                                            );
+                                            ?>">
                                 <div
                                     class="dc-progress-fill <?php
-                                        echo esc_attr(
-                                            $status === 'PASS'
-                                                ? 'is-pass'
-                                                : ''
-                                        );
-                                    ?>"
-                                    style="width: <?php echo esc_attr($width); ?>%;"
-                                ></div>
+                                                            echo esc_attr(
+                                                                $status === 'PASS'
+                                                                    ? 'is-pass'
+                                                                    : ''
+                                                            );
+                                                            ?>"
+                                    style="width: <?php echo esc_attr($width); ?>%;"></div>
                             </div>
 
                             <p class="dc-viewport-note">
                                 <?php
                                 echo esc_html(
                                     isset($item['message']) &&
-                                    is_string($item['message'])
+                                        is_string($item['message'])
                                         ? $item['message']
                                         : ''
                                 );
@@ -696,6 +747,105 @@ $state_class = in_array($state, array('completed'), true)
 
         <?php endif; ?>
     </section>
+
+    <?php if ($state === 'completed' && $report) : ?>
+
+        <section class="dc-card" aria-labelledby="dc-review-title">
+            <div class="dc-card-header">
+                <div>
+                    <h2 id="dc-review-title" class="dc-card-title">
+                        Screenshot Review
+                    </h2>
+                    <p class="dc-card-description">
+                        Inspect approved baselines, current screenshots,
+                        and highlighted visual differences.
+                    </p>
+                </div>
+            </div>
+
+            <div class="dc-review-controls">
+                <div class="dc-review-group">
+                    <label for="dc-review-viewport">Viewport</label>
+                    <select id="dc-review-viewport">
+                        <option value="desktop">Desktop</option>
+                        <option value="tablet">Tablet</option>
+                        <option value="mobile">Mobile</option>
+                    </select>
+                </div>
+
+                <div class="dc-review-group">
+                    <label for="dc-review-mode">Screenshot</label>
+                    <select id="dc-review-mode">
+                        <option value="baselines">Approved Baseline</option>
+                        <option value="current">Current Design</option>
+                        <option value="diffs">Visual Difference</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="dc-preview-frame">
+                <img
+                    id="dc-review-image"
+                    alt="WordPress design screenshot"
+                    loading="lazy">
+                <p id="dc-review-error" hidden role="alert">
+                    Screenshot could not be loaded.
+                </p>
+            </div>
+        </section>
+
+        <?php
+        $image_endpoint = add_query_arg(
+            array(
+                'action' => 'wp_designchecker_image',
+                'nonce' => wp_create_nonce('wp_designchecker_image'),
+            ),
+            admin_url('admin-ajax.php')
+        );
+        ?>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const viewport = document.getElementById('dc-review-viewport');
+                const mode = document.getElementById('dc-review-mode');
+                const image = document.getElementById('dc-review-image');
+                const error = document.getElementById('dc-review-error');
+
+                if (!viewport || !mode || !image || !error) {
+                    return;
+                }
+
+                const endpoint = <?php echo wp_json_encode($image_endpoint); ?>;
+
+                function updatePreview() {
+                    const url = new URL(endpoint);
+
+                    url.searchParams.set('viewport', viewport.value);
+                    url.searchParams.set('mode', mode.value);
+
+                    image.hidden = true;
+                    error.hidden = true;
+
+                    image.onload = function() {
+                        image.hidden = false;
+                    };
+
+                    image.onerror = function() {
+                        image.hidden = true;
+                        error.hidden = false;
+                    };
+
+                    image.src = url.toString();
+                }
+
+                viewport.addEventListener('change', updatePreview);
+                mode.addEventListener('change', updatePreview);
+
+                updatePreview();
+            });
+        </script>
+
+    <?php endif; ?>
 
     <p class="dc-footer">
         WP DesignChecker · Visual Regression Testing for WordPress

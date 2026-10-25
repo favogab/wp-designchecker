@@ -1,6 +1,7 @@
 
 import os
 import json
+import logging
 import threading
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -15,6 +16,17 @@ from starlette.concurrency import run_in_threadpool
 from capture import capture_screenshots
 from compare import generate_report
 
+from fastapi.responses import FileResponse
+from typing import Literal
+
+from database import (
+    initialize_database,
+    recover_interrupted_scans,
+    save_scan,
+    get_saved_scan,
+    get_scan_history,
+)
+
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 API_KEY = os.getenv("DESIGNCHECK_API_KEY")
@@ -28,7 +40,13 @@ scan_lock = threading.Lock()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     if not API_KEY:
-        raise RuntimeError("DESIGNCHECK_API_KEY is not configured.")
+        raise RuntimeError(
+            "DESIGNCHECK_API_KEY is not configured."
+        )
+
+    initialize_database()
+    recover_interrupted_scans()
+
     yield
 
 
@@ -49,31 +67,51 @@ def execute_scan():
     capture_screenshots("current")
     return generate_report()
 
+logger = logging.getLogger(__name__)
+
 
 def process_scan(scan_id):
     if not scan_lock.acquire(blocking=False):
         with jobs_lock:
-            scan_jobs[scan_id]["state"] = "failed"
-            scan_jobs[scan_id]["error"] = "Another scan is already running."
+            job = scan_jobs[scan_id]
+            job["state"] = "failed"
+            job["error"] = "Another scan is already running."
+            job["finished_at"] = datetime.now(
+                timezone.utc
+            ).isoformat()
+            save_scan(dict(job))
         return
 
     try:
         with jobs_lock:
-            scan_jobs[scan_id]["state"] = "running"
+            job = scan_jobs[scan_id]
+            job["state"] = "running"
+            save_scan(dict(job))
 
         result = execute_scan()
 
         with jobs_lock:
-            scan_jobs[scan_id]["state"] = "completed"
-            scan_jobs[scan_id]["result"] = result
-            scan_jobs[scan_id]["finished_at"] = datetime.now(timezone.utc).isoformat()
+            job = scan_jobs[scan_id]
+            job["state"] = "completed"
+            job["result"] = result
+            job["finished_at"] = datetime.now(
+                timezone.utc
+            ).isoformat()
+            save_scan(dict(job))
 
     except Exception:
         with jobs_lock:
-            scan_jobs[scan_id]["state"] = "failed"
-            scan_jobs[scan_id]["error"] = "Screenshot capture or comparison failed."
+            job = scan_jobs[scan_id]
+            job["state"] = "failed"
+            job["error"] = (
+                "Screenshot capture or comparison failed."
+            )
+            job["finished_at"] = datetime.now(
+                timezone.utc
+            ).isoformat()
+            save_scan(dict(job))
 
-        app.logger.exception("Scan job failed") if hasattr(app, "logger") else None
+        logger.exception("Scan job failed")
 
     finally:
         scan_lock.release()
@@ -120,6 +158,7 @@ def create_scan(background_tasks: BackgroundTasks):
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
 
+    save_scan(dict(scan_jobs[scan_id]))
     background_tasks.add_task(process_scan, scan_id)
 
     return {
@@ -129,13 +168,40 @@ def create_scan(background_tasks: BackgroundTasks):
     }
 
 
+
+@app.get(
+    "/api/scans",
+    dependencies=[Depends(authenticate)]
+)
+def list_scans():
+    return {
+        "scans": get_scan_history(limit=20)
+    }
+
+
 @app.get("/api/scans/{scan_id}", dependencies=[Depends(authenticate)])
+
+@app.get(
+    "/api/scans/{scan_id}",
+    dependencies=[Depends(authenticate)]
+)
 def get_scan(scan_id: str):
     with jobs_lock:
         job = scan_jobs.get(scan_id)
-        if job is None:
-            raise HTTPException(status_code=404, detail="Scan not found.")
-        return dict(job)
+
+        if job is not None:
+            return dict(job)
+
+    saved_job = get_saved_scan(scan_id)
+
+    if saved_job is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Scan not found."
+        )
+
+    return saved_job
+
 
 @app.get("/api/reports/latest", dependencies=[Depends(authenticate)])
 def get_latest_report():
@@ -155,3 +221,27 @@ def get_latest_report():
             status_code=500,
             detail="Unable to read the visual comparison report.",
         )    
+
+SCREENSHOT_DIR = Path(__file__).resolve().parent / "screenshots"
+
+@app.get(
+    "/api/screenshots/{mode}/{viewport}",
+    dependencies=[Depends(authenticate)]
+)
+def get_screenshot(
+    mode: Literal["baselines", "current", "diffs"],
+    viewport: Literal["desktop", "tablet", "mobile"],
+):
+    screenshot_path = SCREENSHOT_DIR / mode / f"{viewport}.png"
+
+    if not screenshot_path.is_file():
+        raise HTTPException(
+            status_code=404,
+            detail="Screenshot not found."
+        )
+
+    return FileResponse(
+        screenshot_path,
+        media_type="image/png",
+        headers={"Cache-Control": "no-store"}
+    )    

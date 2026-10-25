@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Plugin Name: WP DesignChecker
  * Description: A visual quality assurance and regression testing tool. Captures desktop and mobile screenshots, compare website layouts against approved baselines, detect unexpected design changes, and review visual differences.
@@ -68,4 +69,58 @@ function wp_designchecker_handle_scan()
 
     wp_safe_redirect(admin_url('admin.php?page=wp-designchecker'));
     exit;
+}
+
+add_action('wp_ajax_wp_designchecker_image', function () {
+    if (!current_user_can('manage_options')) {
+        status_header(403);
+        exit;
+    }
+
+    check_ajax_referer('wp_designchecker_image', 'nonce');
+
+    $mode = isset($_GET['mode'])
+        ? sanitize_key(wp_unslash($_GET['mode']))
+        : '';
+
+    $viewport = isset($_GET['viewport'])
+        ? sanitize_key(wp_unslash($_GET['viewport']))
+        : '';
+
+    $image = WP_DesignChecker_API_Client::get_screenshot(
+        $mode,
+        $viewport
+    );
+
+    if (is_wp_error($image)) {
+        status_header(404);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo esc_html($image->get_error_message());
+        exit;
+    }
+
+
+    header('Content-Type: image/png');
+    header('Cache-Control: no-store, private');
+    header('X-Content-Type-Options: nosniff');
+    header('Content-Length: ' . strlen($image));
+
+    echo $image;
+    exit;
+});
+
+add_action('admin_enqueue_scripts', 'wp_designchecker_enqueue_assets');
+
+function wp_designchecker_enqueue_assets($hook)
+{
+    if ($hook !== 'toplevel_page_wp-designchecker') {
+        return;
+    }
+
+    wp_enqueue_style(
+        'wp-designchecker-dashboard',
+        plugin_dir_url(__FILE__) . 'assets/css/dashboard.css',
+        array(),
+        '0.1.0'
+    );
 }

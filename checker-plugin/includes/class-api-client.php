@@ -70,4 +70,66 @@ class WP_DesignChecker_API_Client
 
         return self::request('GET', '/api/scans/' . $scan_id);
     }
+
+    public static function get_screenshot($mode, $viewport)
+    {
+        $allowed_modes = array('baselines', 'current', 'diffs');
+        $allowed_viewports = array('desktop', 'tablet', 'mobile');
+
+        if (
+            !in_array($mode, $allowed_modes, true) ||
+            !in_array($viewport, $allowed_viewports, true)
+        ) {
+            return new WP_Error(
+                'invalid_screenshot',
+                'Invalid screenshot selection.'
+            );
+        }
+
+        if (!defined('WP_DESIGNCHECKER_API_KEY') || !WP_DESIGNCHECKER_API_KEY) {
+            return new WP_Error(
+                'missing_api_key',
+                'DesignChecker API key is not configured.'
+            );
+        }
+
+        $response = wp_remote_get(
+            self::API_URL . '/api/screenshots/' . $mode . '/' . $viewport,
+            array(
+                'headers' => array(
+                    'X-API-Key' => WP_DESIGNCHECKER_API_KEY,
+                ),
+                'timeout' => 20,
+            )
+        );
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        if (wp_remote_retrieve_response_code($response) !== 200) {
+            return new WP_Error(
+                'screenshot_unavailable',
+                'Screenshot could not be retrieved.'
+            );
+        }
+
+        $image = wp_remote_retrieve_body($response);
+
+        if (strlen($image) > 10 * 1024 * 1024) {
+            return new WP_Error(
+                'screenshot_too_large',
+                'Screenshot exceeds the size limit.'
+            );
+        }
+
+        if (strncmp($image, "\x89PNG\r\n\x1a\n", 8) !== 0) {
+            return new WP_Error(
+                'invalid_image',
+                'The service did not return a valid PNG image.'
+            );
+        }
+
+        return $image;
+    }
 }
