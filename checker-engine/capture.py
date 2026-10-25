@@ -26,6 +26,7 @@ def capture_screenshots(mode):
 
         try:
             for device, viewport in VIEWPORTS.items():
+                print(f"Starting {device} capture...", flush=True)
                 output_file = output_dir / f"{device}.png"
 
                 # Protect approved baselines from accidental replacement.
@@ -39,7 +40,9 @@ def capture_screenshots(mode):
                 )
 
                 try:
-                    page.goto(PAGE_URL, wait_until="load", timeout=30000)
+                    print(f"Navigating to {PAGE_URL} for {device}...", flush=True)
+                    page.goto(PAGE_URL, wait_until="domcontentloaded", timeout=60000)
+                    page.locator("body").wait_for(state="visible", timeout=15000)
                     page.screenshot(
                         path=str(output_file),
                         full_page=True,
