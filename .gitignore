@@ -13,6 +13,7 @@ wp-content/debug.log
 
 # Generated visual testing artifacts
 checker-engine/screenshots/
+checker-engine/reports/
 baselines/
 diffs/
 results/
