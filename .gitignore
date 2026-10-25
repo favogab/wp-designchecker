@@ -28,3 +28,6 @@ checker-engine/*.db
 checker-engine/*.db-journal
 checker-engine/*.db-wal
 checker-engine/*.db-shm
+
+# Local baseline backups from functional testing
+checker-engine/baseline-backups/
