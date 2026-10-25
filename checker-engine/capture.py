@@ -3,12 +3,13 @@ from pathlib import Path
 import argparse
 
 from playwright.sync_api import sync_playwright
+from playwright.sync_api import ViewportSize
 
 PAGE_URL = "http://wp-designchecker.local/designcheck-test-page/"
 
 SCREENSHOT_DIR = Path(__file__).resolve().parent / "screenshots"
 
-VIEWPORTS = {
+VIEWPORTS: dict[str, ViewportSize] = {
     "desktop": {"width": 1440, "height": 900},
     "tablet": {"width": 768, "height": 1024},
     "mobile": {"width": 390, "height": 844},

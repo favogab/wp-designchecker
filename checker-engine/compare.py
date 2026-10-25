@@ -75,11 +75,36 @@ def compare_images(device):
         }
 
 
-def generate_report():
-    results = [compare_images(device) for device in VIEWPORTS]
+def generate_report(detailed=False):
+    """
+    Generate a visual regression comparison report.
 
-    statuses = [result["status"] for result in results]
+    Compares approved baseline screenshots against current
+    screenshots for desktop, tablet, and mobile viewports.
 
+    Args:
+        detailed (bool):
+            When False, return only the overall comparison status.
+            When True, return the complete comparison report.
+
+    Returns:
+        str | dict:
+            Overall status or complete visual comparison report.
+    """
+
+    # Compare screenshots across all supported viewports.
+    results = [
+        compare_images(device)
+        for device in VIEWPORTS
+    ]
+
+    # Collect individual viewport comparison statuses.
+    statuses = [
+        result["status"]
+        for result in results
+    ]
+
+    # Determine the overall visual regression result.
     if "ERROR" in statuses:
         overall_status = "ERROR"
     elif "FAIL" in statuses:
@@ -87,6 +112,7 @@ def generate_report():
     else:
         overall_status = "PASS"
 
+    # Build the complete structured comparison report.
     report = {
         "project": "WP DesignChecker",
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -95,17 +121,21 @@ def generate_report():
         "results": results,
     }
 
+    # Ensure the report directory exists.
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Save the latest report for dashboard compatibility.
     report_path = REPORT_DIR / "latest-report.json"
 
     with report_path.open("w", encoding="utf-8") as file:
         json.dump(report, file, indent=4)
 
+    # Display comparison results in the terminal.
     print("\nWP DesignChecker — Visual Regression Report\n")
 
     for result in results:
         difference = result["difference"]
+
         percentage = (
             f"{difference:.2f}%"
             if difference is not None
@@ -120,16 +150,35 @@ def generate_report():
     print(f"\nOverall: {overall_status}")
     print(f"Report saved: {report_path}")
 
+    # Return the full report when detailed results are requested.
+    if detailed:
+        return report
+
+    # Preserve compatibility with existing code.
     return overall_status
 
 
 if __name__ == "__main__":
-    status = generate_report()
+    """
+    Run the comparison engine directly from the terminal.
 
+    Convert the visual regression result into an appropriate
+    process exit code for command-line execution.
+    """
+
+    # Generate the standard comparison result.
+    status = generate_report(detailed=False)
+
+    # Define exit codes for comparison outcomes.
     exit_codes = {
         "PASS": 0,
         "FAIL": 1,
         "ERROR": 2,
     }
 
+    # Ensure the returned result is a string before using it as a key.
+    if not isinstance(status, str):
+        raise TypeError("Expected a string comparison status.")
+
+    # Exit with the corresponding comparison status code.
     sys.exit(exit_codes[status])

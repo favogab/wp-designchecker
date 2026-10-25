@@ -412,3 +412,120 @@
         font-size: 25px;
     }
 }
+
+/* ==========================================================
+   Scan History
+   ========================================================== */
+
+/* Number of history records displayed. */
+.dc-history-count {
+    display: inline-flex;
+    align-items: center;
+    padding: 9px 15px;
+    border: 1px solid #dce4ef;
+    border-radius: 999px;
+    background: #f8fafc;
+    color: #526581;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* Allow horizontal scrolling on smaller screens. */
+.dc-history-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 24px;
+    border: 1px solid #e1e8f2;
+    border-radius: 12px;
+}
+
+/* Main history table. */
+.dc-history-table {
+    width: 100%;
+    min-width: 680px;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+/* Column headings. */
+.dc-history-table thead {
+    background: #f7f9fc;
+}
+
+.dc-history-table th {
+    padding: 17px 20px;
+    color: #536783;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.035em;
+    text-transform: uppercase;
+    border-bottom: 1px solid #e1e8f2;
+}
+
+/* Individual scan records. */
+.dc-history-table td {
+    padding: 18px 20px;
+    border-bottom: 1px solid #edf1f6;
+    vertical-align: middle;
+    font-size: 14px;
+    color: #10213d;
+}
+
+/* Remove the final row border. */
+.dc-history-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Highlight the record being inspected. */
+.dc-history-table tbody tr:hover {
+    background: #f8faff;
+}
+
+/* Scan date and time. */
+.dc-history-date {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.dc-history-date strong {
+    font-weight: 600;
+    color: #10213d;
+}
+
+.dc-history-date span {
+    color: #7283a0;
+    font-size: 12px;
+}
+
+/* Shortened scan identifier. */
+.dc-history-id {
+    display: inline-block;
+    padding: 6px 9px;
+    border-radius: 6px;
+    background: #f1f5fa;
+    color: #526581;
+    font-size: 12px;
+}
+
+/* Scan duration. */
+.dc-history-duration {
+    font-weight: 500;
+    color: #526581;
+    white-space: nowrap;
+}
+
+/* Responsive refinements. */
+@media (max-width: 782px) {
+
+    .dc-history-section .dc-card-header {
+        flex-wrap: wrap;
+        gap: 14px;
+    }
+
+    .dc-history-table th,
+    .dc-history-table td {
+        padding: 14px 16px;
+    }
+}
